@@ -63,6 +63,53 @@ bool isEnoughResource(int cpuNumber, int currentRam, int currentCpu) {
     return false;   //Returns false if limits are exceeded
 }
 
+//Function to assign procesess to cpus
+void assignCpus(FILE* file, struct Process processes[], int processCount) {
+    for (int i = 0; i< processCount;i++) {
+        switch (processes[i].priority) {
+            case 0 : fprintf(file,"Process %d is queued to be assigned to CPU-1.\n",processes[i].processNumber); break;
+            case 1 : fprintf(file,"Process %d is queued to be assigned to CPU-2.\n",processes[i].processNumber); break;
+            case 2 : fprintf(file,"Process %d is queued to be assigned to CPU-2.\n",processes[i].processNumber); break;
+            case 3 : fprintf(file,"Process %d is queued to be assigned to CPU-2.\n",processes[i].processNumber); break;
+            default: perror("No such priority is defined");
+        }
+    }
+}
+
+//Functions to process the processes with priority 0 at cpu1
+void FCFS(FILE* file,struct Process processes[],int processCount,int priority0Count) {
+    struct Process priority0[priority0Count];   //Struct to hold every process with priority 0
+    //Add all priority 0 processes to cpu1 queue
+    for(int i =0, j=0 ;i<processCount;i++) {
+        if(processes[i].priority==0 && isEnoughResource(1,processes[i].ram,processes[i].cpuUsage)) {
+            priority0[j] = processes[i];
+            j++;
+        }
+    }
+    if(priority0 != NULL){  //Doesnt run if there is no process with priority 0
+        //Sort the process according to arrival time with bubble sort
+        for(int i=0;i<priority0Count-1;i++) {
+            for (int j =0; j< priority0Count-i-1;j++) {
+                if(priority0[j].arrivalTime>priority0[j+1].arrivalTime) {
+                    struct Process temp = priority0[j];
+                    priority0[j] = priority0[j+1];
+                    priority0[j+1] = temp;
+                }
+            }
+        }
+        printf("CPU-1 que1(priority-0) (FCFS) ->");
+        //Assign processes to the cpu1 within resource limits
+        for(int i=0;i<priority0Count;i++) {
+            if(isEnoughResource(1,priority0[i].ram, priority0[i].cpuUsage)) {
+                printf("P%d,", priority0[i].processNumber);
+                fprintf(file,"Process %d is assigned to CPU-1.\n" , priority0[i].processNumber);
+                fprintf(file,"Process %d is completed and terminated.\n" , priority0[i].processNumber);
+            }
+        }
+    }
+}
+
+
 int main(void)
 {
     struct Process processes[MAX_PROCESSES];    //Create a struct for all processes
@@ -83,6 +130,8 @@ int main(void)
     }
 
     readFile(inputFile,processes, &processCount, &count0, &count1, &count2, &count3);   //Reads the input file
+    assignCpus(outputFile,processes,processCount);                                      //Assigns processes to cpus
+    FCFS(outputFile,processes,processCount,count0);                         //Runs the FCFS algortihm for priority 0 processes in cpu1
   
     //Closes the files
     fclose(inputFile);
