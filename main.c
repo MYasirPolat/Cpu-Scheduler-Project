@@ -18,6 +18,7 @@ struct Process {
     bool isQueued;
 };
 
+
 //Function to read and assigns procceses to structs
 void readFile(FILE* file,struct Process processes[],int* processCount,int* count0, int* count1, int* count2, int* count3) {
 
@@ -109,6 +110,43 @@ void FCFS(FILE* file,struct Process processes[],int processCount,int priority0Co
     }
 }
 
+//Functions to process the processes with priority 1 at cpu2
+void SJF(FILE* file, struct Process processes[], int processCount, int priority1Count) {
+    int elapsedTime = 0;        //Integer for storing the time that has passed
+    int processedCount = 0;     //Integer for storing the processes that are terminated
+
+    printf("\nCPU-2 que2(priority-1) (SJF) ->");
+    //Runs until all the processes with priority 0 are executed and terminated
+    while (processedCount < priority1Count) {
+        int fastestProcessIndex = -1;   //Holds the index of fastest process
+        // Find the process with the shortest burst time that has arrived and is not processed yet
+        for (int i = 0; i < processCount; i++) {
+            if (processes[i].priority == 1 && processes[i].arrivalTime <= elapsedTime && !processes[i].isTerminated) {
+                if (fastestProcessIndex == -1 || processes[i].burstTime < processes[fastestProcessIndex].burstTime) {
+                    fastestProcessIndex = i;
+                }
+            }
+        }
+
+        if (fastestProcessIndex != -1) {    //Checks if there is a fastest process
+            //Assign processes to the cpu1 within resource limits
+            struct Process* fastestProcess = &processes[fastestProcessIndex];
+            if(isEnoughResource(2, processes[fastestProcessIndex].ram,processes[fastestProcessIndex].cpuUsage)) {
+                printf("P%d,",fastestProcess->processNumber);
+                fprintf(file, "Process %d is assigned to CPU-2.\n", fastestProcess->processNumber);
+                fprintf(file, "Process %d is completed and terminated.\n", fastestProcess->processNumber);
+                elapsedTime += fastestProcess->burstTime;
+            }else{fprintf(file,"Not enough resources for Process %d\n",processes[fastestProcessIndex].processNumber);}
+
+            fastestProcess->isTerminated = true;
+            processedCount++;
+        } else {
+            // No process arrived yet, increment the time
+            elapsedTime++;
+        }
+    }
+}
+
 
 int main(void)
 {
@@ -132,6 +170,7 @@ int main(void)
     readFile(inputFile,processes, &processCount, &count0, &count1, &count2, &count3);   //Reads the input file
     assignCpus(outputFile,processes,processCount);                                      //Assigns processes to cpus
     FCFS(outputFile,processes,processCount,count0);                         //Runs the FCFS algortihm for priority 0 processes in cpu1
+    SJF(outputFile,processes,processCount,count1);                          //Runs the SJF algortihm for priority 1 processes in cpu2
   
     //Closes the files
     fclose(inputFile);
